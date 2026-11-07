@@ -17,6 +17,45 @@ const compact = (v) => {
   return v.toFixed(0);
 };
 
+// ----------------------------------------------------------------- theme ---
+// The active theme lives in <html data-theme="dark|light">, set before
+// first paint by the inline script in index.html (stored choice, else the
+// OS preference, with a ?theme= override). CSS colours come from the
+// theme variables in style.css; the SVG chart strokes are passed in as
+// strings, so they are read back out of those same variables here.
+
+const THEME_KEY = 'near-thesis-theme';
+let currentData = null; // last rendered dataset, for chart redraws
+let simRedraw = null;   // simulator's run(), once initialised
+
+function chartColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const get = (name) => cs.getPropertyValue(name).trim();
+  return {
+    blue: get('--chart-blue'), accent: get('--chart-accent'),
+    amber: get('--chart-amber'), purple: get('--chart-purple'),
+    green: get('--chart-green'),
+  };
+}
+
+function syncToggleLabel() {
+  const btn = $('theme-toggle');
+  if (!btn) return;
+  const light = document.documentElement.dataset.theme === 'light';
+  btn.textContent = light ? '🌙 Dark' : '☀️ Light';
+  btn.setAttribute('aria-pressed', String(light));
+}
+
+function setTheme(theme, persist = true) {
+  document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, document.documentElement.dataset.theme); } catch (e) { /* storage unavailable */ }
+  }
+  syncToggleLabel();
+  if (currentData) drawDataCharts(currentData);
+  if (simRedraw) simRedraw();
+}
+
 // ------------------------------------------------------------ SVG charts ---
 
 // seriesList: [{data: [{t, v}], color, label}]
@@ -53,7 +92,35 @@ function stat(label, value, sub = '') {
   return `<div class="stat"><span class="k">${label}</span><span class="v">${value}</span>${sub ? `<span class="s">${sub}</span>` : ''}</div>`;
 }
 
+// The five data charts, factored out so a theme switch can redraw them
+// with the new theme's colours without re-rendering the whole page.
+function drawDataCharts(data) {
+  const M = data.metrics;
+  const S = data.series;
+  const C = chartColors();
+  const cap = (id, title, source, asOfT) => {
+    $(id).innerHTML = `<b>${title}</b> — source: ${source}${asOfT ? ` · as of ${dateOf(asOfT)}` : ''}`;
+  };
+  cap('cap-tvl', 'NEAR base-chain TVL, USD', 'DefiLlama /v2/historicalChainTvl/Near', M.tvlAsOf);
+  lineChart($('chart-tvl'), [{ data: S.tvl, color: C.blue }], (v) => `$${compact(v)}`);
+  cap('cap-revenue', 'Daily revenue, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees/revenue summaries');
+  lineChart($('chart-revenue'), [
+    { data: S.intentsRevenue, color: C.accent },
+    { data: S.chainRevenue, color: C.amber },
+  ], (v) => `$${compact(v)}`);
+  cap('cap-fees', 'Daily fees, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees summaries');
+  lineChart($('chart-fees'), [
+    { data: S.intentsFees, color: C.accent },
+    { data: S.chainFees, color: C.amber },
+  ], (v) => `$${compact(v)}`);
+  cap('cap-price', 'NEAR price, USD (weekly)', 'DefiLlama coins chart, coingecko:near', M.priceAsOf);
+  lineChart($('chart-price'), [{ data: S.price, color: C.purple }], (v) => `$${v.toFixed(1)}`);
+  cap('cap-stables', 'Stablecoin supply on NEAR, USD', 'DefiLlama stablecoins, chain Near', M.stablesAsOf);
+  lineChart($('chart-stables'), [{ data: S.stables, color: C.green }], (v) => `$${compact(v)}`);
+}
+
 function render(data) {
+  currentData = data;
   const M = data.metrics;
   const S = data.series;
   $('asof').textContent = `Data fetched ${data.fetchedAt.replace('T', ' ').slice(0, 19)} UTC · sources listed at the bottom · rebuild: node build-data.mjs`;
@@ -76,25 +143,7 @@ function render(data) {
       <p class="evidence">${c.evidence}</p>
     </div>`).join('');
 
-  const cap = (id, title, source, asOfT) => {
-    $(id).innerHTML = `<b>${title}</b> — source: ${source}${asOfT ? ` · as of ${dateOf(asOfT)}` : ''}`;
-  };
-  cap('cap-tvl', 'NEAR base-chain TVL, USD', 'DefiLlama /v2/historicalChainTvl/Near', M.tvlAsOf);
-  lineChart($('chart-tvl'), [{ data: S.tvl, color: '#5ea8e8' }], (v) => `$${compact(v)}`);
-  cap('cap-revenue', 'Daily revenue, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees/revenue summaries');
-  lineChart($('chart-revenue'), [
-    { data: S.intentsRevenue, color: '#00ec97' },
-    { data: S.chainRevenue, color: '#e0a83c' },
-  ], (v) => `$${compact(v)}`);
-  cap('cap-fees', 'Daily fees, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees summaries');
-  lineChart($('chart-fees'), [
-    { data: S.intentsFees, color: '#00ec97' },
-    { data: S.chainFees, color: '#e0a83c' },
-  ], (v) => `$${compact(v)}`);
-  cap('cap-price', 'NEAR price, USD (weekly)', 'DefiLlama coins chart, coingecko:near', M.priceAsOf);
-  lineChart($('chart-price'), [{ data: S.price, color: '#b07fe8' }], (v) => `$${v.toFixed(1)}`);
-  cap('cap-stables', 'Stablecoin supply on NEAR, USD', 'DefiLlama stablecoins, chain Near', M.stablesAsOf);
-  lineChart($('chart-stables'), [{ data: S.stables, color: '#3fb96f' }], (v) => `$${compact(v)}`);
+  drawDataCharts(data);
 
   const rpc = M.rpc || {};
   $('rpc').innerHTML = [
@@ -136,12 +185,17 @@ function initSimulator() {
       stat('Gross staking yield path', `${s.yieldStartPct.toFixed(2)}% → ${s.yieldAt27Pct.toFixed(2)}%`, 'month 0 → month 27, at this staking ratio'),
       stat('Supply at month 59', `${(s.supplyFinal / 1e9).toFixed(3)}B`, 'after issuance minus assumed burn'),
     ].join('');
+    const C = chartColors();
     const rateSeries = rows.map((r) => ({ t: r.month, v: r.ratePct }));
     const savedSeries = rows.map((r) => ({ t: r.month, v: r.savedCumulative }));
-    lineChart($('chart-rate'), [{ data: rateSeries, color: '#00ec97' }], (v) => `${v.toFixed(1)}%`, (t) => `month ${t}`);
-    lineChart($('chart-saved'), [{ data: savedSeries, color: '#5ea8e8' }], (v) => `${compact(v)}`, (t) => `month ${t}`);
+    lineChart($('chart-rate'), [{ data: rateSeries, color: C.accent }], (v) => `${v.toFixed(1)}%`, (t) => `month ${t}`);
+    lineChart($('chart-saved'), [{ data: savedSeries, color: C.blue }], (v) => `${compact(v)}`, (t) => `month ${t}`);
   }
-  for (const el of [inStaking, inBurn, inSupply]) el.addEventListener('input', run);
+  simRedraw = run;
+  if (!initSimulator.attached) {
+    for (const el of [inStaking, inBurn, inSupply]) el.addEventListener('input', run);
+    initSimulator.attached = true;
+  }
   run();
 }
 
@@ -160,5 +214,13 @@ async function main() {
   }
   render(data);
 }
+
+const toggleBtn = $('theme-toggle');
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  });
+}
+syncToggleLabel();
 
 main();

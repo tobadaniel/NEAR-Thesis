@@ -3,12 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // Set the theme before first paint: a ?theme=dark|light override wins
+  // (handy for screenshots), then the stored choice, then the OS setting.
+  (function () {
+    var t = null;
+    try {
+      t = new URLSearchParams(location.search).get('theme')
+        || localStorage.getItem('near-thesis-theme')
+        || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    } catch (e) { /* storage unavailable — fall through to dark */ }
+    document.documentElement.dataset.theme = (t === 'light') ? 'light' : 'dark';
+  })();
+</script>
 <title>NEAR, On The Evidence — an investment thesis you can re-run</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-  <h1>NEAR, On The Evidence</h1>
+  <div class="header-row">
+    <h1>NEAR, On The Evidence</h1>
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark / light theme"></button>
+  </div>
   <p class="lede">The claim under test: <strong>NEAR's real business is becoming Intents and
   cross-chain flow, not base-chain gas</strong> — so fee capture, buybacks and the HSP-029
   issuance cut matter more to NEAR's long-term value than headline TVL.

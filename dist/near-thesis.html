@@ -3,18 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+  // Set the theme before first paint: a ?theme=dark|light override wins
+  // (handy for screenshots), then the stored choice, then the OS setting.
+  (function () {
+    var t = null;
+    try {
+      t = new URLSearchParams(location.search).get('theme')
+        || localStorage.getItem('near-thesis-theme')
+        || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    } catch (e) { /* storage unavailable — fall through to dark */ }
+    document.documentElement.dataset.theme = (t === 'light') ? 'light' : 'dark';
+  })();
+</script>
 <title>NEAR, On The Evidence — an investment thesis you can re-run</title>
 <style>
-:root {
+/* Themes: dark is the original look; light is a warm paper variant.
+   Every colour on the page (CSS and the SVG chart strokes, which app.js
+   reads from the --chart-* variables) comes from these variables. */
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0e1116; --panel: #161c26; --panel2: #1c2432; --ink: #e9edf4;
   --dim: #9aa7ba; --line: #2a3446; --accent: #00ec97;
   --green: #3fb96f; --amber: #e0a83c; --red: #e05c5c; --blue: #5ea8e8;
+  --chart-blue: #5ea8e8; --chart-accent: #00ec97; --chart-amber: #e0a83c;
+  --chart-purple: #b07fe8; --chart-green: #3fb96f;
+  --badge-supported-bg: #123524; --badge-supported-border: #1f5c3d;
+  --badge-mixed-bg: #38300f; --badge-mixed-border: #6b5716;
+  --badge-contradicted-bg: #3d1620; --badge-contradicted-border: #6e2436;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f1e7; --panel: #fffdf7; --panel2: #f1e9d8; --ink: #24313a;
+  --dim: #57666f; --line: #ddd2bd; --accent: #007a52;
+  --green: #22733f; --amber: #8f6206; --red: #b02f2f; --blue: #2f6db3;
+  --chart-blue: #2f7fc9; --chart-accent: #00875f; --chart-amber: #b97a0e;
+  --chart-purple: #7c4dc4; --chart-green: #2e9e5b;
+  --badge-supported-bg: #e1f3e5; --badge-supported-border: #a5d3b1;
+  --badge-mixed-bg: #f8edd0; --badge-mixed-border: #ddc384;
+  --badge-contradicted-bg: #fbe4e1; --badge-contradicted-border: #eba79d;
 }
 * { box-sizing: border-box; }
 body { margin: 0 auto; max-width: 1080px; padding: 22px 16px 40px; background: var(--bg); color: var(--ink);
   font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 h1 { font-size: 30px; margin: 0 0 6px; }
 h2 { font-size: 19px; margin: 26px 0 8px; }
+.header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.theme-toggle { flex: none; cursor: pointer; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px;
+  font: inherit; font-size: 13.5px; line-height: 1.3; }
+.theme-toggle:hover { background: var(--panel2); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mono { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
 .dim { color: var(--dim); }
 .lede { font-size: 16.5px; color: var(--dim); max-width: 75ch; }
@@ -30,9 +69,9 @@ h2 { font-size: 19px; margin: 26px 0 8px; }
 .card .claim { font-weight: 600; margin: 8px 0 6px; }
 .card .evidence { color: var(--dim); font-size: 13.5px; margin: 0; }
 .badge { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px; text-transform: uppercase; letter-spacing: .04em; }
-.badge.supported { background: #123524; color: var(--green); border: 1px solid #1f5c3d; }
-.badge.mixed { background: #38300f; color: var(--amber); border: 1px solid #6b5716; }
-.badge.contradicted { background: #3d1620; color: var(--red); border: 1px solid #6e2436; }
+.badge.supported { background: var(--badge-supported-bg); color: var(--green); border: 1px solid var(--badge-supported-border); }
+.badge.mixed { background: var(--badge-mixed-bg); color: var(--amber); border: 1px solid var(--badge-mixed-border); }
+.badge.contradicted { background: var(--badge-contradicted-bg); color: var(--red); border: 1px solid var(--badge-contradicted-border); }
 .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
 figure { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 0; }
 figcaption { font-size: 13.5px; color: var(--dim); margin-bottom: 8px; }
@@ -52,7 +91,10 @@ footer li { margin: 3px 0; word-break: break-all; }
 </head>
 <body>
 <header>
-  <h1>NEAR, On The Evidence</h1>
+  <div class="header-row">
+    <h1>NEAR, On The Evidence</h1>
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark / light theme"></button>
+  </div>
   <p class="lede">The claim under test: <strong>NEAR's real business is becoming Intents and
   cross-chain flow, not base-chain gas</strong> — so fee capture, buybacks and the HSP-029
   issuance cut matter more to NEAR's long-term value than headline TVL.
@@ -17428,6 +17470,45 @@ const compact = (v) => {
   return v.toFixed(0);
 };
 
+// ----------------------------------------------------------------- theme ---
+// The active theme lives in <html data-theme="dark|light">, set before
+// first paint by the inline script in index.html (stored choice, else the
+// OS preference, with a ?theme= override). CSS colours come from the
+// theme variables in style.css; the SVG chart strokes are passed in as
+// strings, so they are read back out of those same variables here.
+
+const THEME_KEY = 'near-thesis-theme';
+let currentData = null; // last rendered dataset, for chart redraws
+let simRedraw = null;   // simulator's run(), once initialised
+
+function chartColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const get = (name) => cs.getPropertyValue(name).trim();
+  return {
+    blue: get('--chart-blue'), accent: get('--chart-accent'),
+    amber: get('--chart-amber'), purple: get('--chart-purple'),
+    green: get('--chart-green'),
+  };
+}
+
+function syncToggleLabel() {
+  const btn = $('theme-toggle');
+  if (!btn) return;
+  const light = document.documentElement.dataset.theme === 'light';
+  btn.textContent = light ? '🌙 Dark' : '☀️ Light';
+  btn.setAttribute('aria-pressed', String(light));
+}
+
+function setTheme(theme, persist = true) {
+  document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, document.documentElement.dataset.theme); } catch (e) { /* storage unavailable */ }
+  }
+  syncToggleLabel();
+  if (currentData) drawDataCharts(currentData);
+  if (simRedraw) simRedraw();
+}
+
 // ------------------------------------------------------------ SVG charts ---
 
 // seriesList: [{data: [{t, v}], color, label}]
@@ -17464,7 +17545,35 @@ function stat(label, value, sub = '') {
   return `<div class="stat"><span class="k">${label}</span><span class="v">${value}</span>${sub ? `<span class="s">${sub}</span>` : ''}</div>`;
 }
 
+// The five data charts, factored out so a theme switch can redraw them
+// with the new theme's colours without re-rendering the whole page.
+function drawDataCharts(data) {
+  const M = data.metrics;
+  const S = data.series;
+  const C = chartColors();
+  const cap = (id, title, source, asOfT) => {
+    $(id).innerHTML = `<b>${title}</b> — source: ${source}${asOfT ? ` · as of ${dateOf(asOfT)}` : ''}`;
+  };
+  cap('cap-tvl', 'NEAR base-chain TVL, USD', 'DefiLlama /v2/historicalChainTvl/Near', M.tvlAsOf);
+  lineChart($('chart-tvl'), [{ data: S.tvl, color: C.blue }], (v) => `${compact(v)}`);
+  cap('cap-revenue', 'Daily revenue, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees/revenue summaries');
+  lineChart($('chart-revenue'), [
+    { data: S.intentsRevenue, color: C.accent },
+    { data: S.chainRevenue, color: C.amber },
+  ], (v) => `${compact(v)}`);
+  cap('cap-fees', 'Daily fees, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees summaries');
+  lineChart($('chart-fees'), [
+    { data: S.intentsFees, color: C.accent },
+    { data: S.chainFees, color: C.amber },
+  ], (v) => `${compact(v)}`);
+  cap('cap-price', 'NEAR price, USD (weekly)', 'DefiLlama coins chart, coingecko:near', M.priceAsOf);
+  lineChart($('chart-price'), [{ data: S.price, color: C.purple }], (v) => `${v.toFixed(1)}`);
+  cap('cap-stables', 'Stablecoin supply on NEAR, USD', 'DefiLlama stablecoins, chain Near', M.stablesAsOf);
+  lineChart($('chart-stables'), [{ data: S.stables, color: C.green }], (v) => `${compact(v)}`);
+}
+
 function render(data) {
+  currentData = data;
   const M = data.metrics;
   const S = data.series;
   $('asof').textContent = `Data fetched ${data.fetchedAt.replace('T', ' ').slice(0, 19)} UTC · sources listed at the bottom · rebuild: node build-data.mjs`;
@@ -17487,25 +17596,7 @@ function render(data) {
       <p class="evidence">${c.evidence}</p>
     </div>`).join('');
 
-  const cap = (id, title, source, asOfT) => {
-    $(id).innerHTML = `<b>${title}</b> — source: ${source}${asOfT ? ` · as of ${dateOf(asOfT)}` : ''}`;
-  };
-  cap('cap-tvl', 'NEAR base-chain TVL, USD', 'DefiLlama /v2/historicalChainTvl/Near', M.tvlAsOf);
-  lineChart($('chart-tvl'), [{ data: S.tvl, color: '#5ea8e8' }], (v) => `${compact(v)}`);
-  cap('cap-revenue', 'Daily revenue, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees/revenue summaries');
-  lineChart($('chart-revenue'), [
-    { data: S.intentsRevenue, color: '#00ec97' },
-    { data: S.chainRevenue, color: '#e0a83c' },
-  ], (v) => `${compact(v)}`);
-  cap('cap-fees', 'Daily fees, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees summaries');
-  lineChart($('chart-fees'), [
-    { data: S.intentsFees, color: '#00ec97' },
-    { data: S.chainFees, color: '#e0a83c' },
-  ], (v) => `${compact(v)}`);
-  cap('cap-price', 'NEAR price, USD (weekly)', 'DefiLlama coins chart, coingecko:near', M.priceAsOf);
-  lineChart($('chart-price'), [{ data: S.price, color: '#b07fe8' }], (v) => `${v.toFixed(1)}`);
-  cap('cap-stables', 'Stablecoin supply on NEAR, USD', 'DefiLlama stablecoins, chain Near', M.stablesAsOf);
-  lineChart($('chart-stables'), [{ data: S.stables, color: '#3fb96f' }], (v) => `${compact(v)}`);
+  drawDataCharts(data);
 
   const rpc = M.rpc || {};
   $('rpc').innerHTML = [
@@ -17547,12 +17638,17 @@ function initSimulator() {
       stat('Gross staking yield path', `${s.yieldStartPct.toFixed(2)}% → ${s.yieldAt27Pct.toFixed(2)}%`, 'month 0 → month 27, at this staking ratio'),
       stat('Supply at month 59', `${(s.supplyFinal / 1e9).toFixed(3)}B`, 'after issuance minus assumed burn'),
     ].join('');
+    const C = chartColors();
     const rateSeries = rows.map((r) => ({ t: r.month, v: r.ratePct }));
     const savedSeries = rows.map((r) => ({ t: r.month, v: r.savedCumulative }));
-    lineChart($('chart-rate'), [{ data: rateSeries, color: '#00ec97' }], (v) => `${v.toFixed(1)}%`, (t) => `month ${t}`);
-    lineChart($('chart-saved'), [{ data: savedSeries, color: '#5ea8e8' }], (v) => `${compact(v)}`, (t) => `month ${t}`);
+    lineChart($('chart-rate'), [{ data: rateSeries, color: C.accent }], (v) => `${v.toFixed(1)}%`, (t) => `month ${t}`);
+    lineChart($('chart-saved'), [{ data: savedSeries, color: C.blue }], (v) => `${compact(v)}`, (t) => `month ${t}`);
   }
-  for (const el of [inStaking, inBurn, inSupply]) el.addEventListener('input', run);
+  simRedraw = run;
+  if (!initSimulator.attached) {
+    for (const el of [inStaking, inBurn, inSupply]) el.addEventListener('input', run);
+    initSimulator.attached = true;
+  }
   run();
 }
 
@@ -17571,6 +17667,14 @@ async function main() {
   }
   render(data);
 }
+
+const toggleBtn = $('theme-toggle');
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  });
+}
+syncToggleLabel();
 
 main();
 
