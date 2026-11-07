@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEAR, On The Evidence — an investment thesis you can re-run</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>NEAR, On The Evidence</h1>
+  <p class="lede">The claim under test: <strong>NEAR's real business is becoming Intents and
+  cross-chain flow, not base-chain gas</strong> — so fee capture, buybacks and the HSP-029
+  issuance cut matter more to NEAR's long-term value than headline TVL.
+  Every number below was pulled from free public APIs at build time and can be
+  re-pulled by anyone: <span class="mono">node build-data.mjs</span>.</p>
+  <p class="asof" id="asof">Loading data…</p>
+</header>
+
+<section id="stats" class="stats"></section>
+
+<section>
+  <h2>Thesis scorecard</h2>
+  <p class="dim">Each claim gets a verdict from a stated rule, applied to the fetched data.
+  Contradicted claims stay on the board — that is the point of testing a thesis.</p>
+  <div id="scorecard" class="scorecard"></div>
+</section>
+
+<section>
+  <h2>The numbers</h2>
+  <div class="charts">
+    <figure><figcaption id="cap-tvl"></figcaption><div id="chart-tvl"></div></figure>
+    <figure><figcaption id="cap-revenue"></figcaption><div id="chart-revenue"></div></figure>
+    <figure><figcaption id="cap-fees"></figcaption><div id="chart-fees"></div></figure>
+    <figure><figcaption id="cap-price"></figcaption><div id="chart-price"></div></figure>
+    <figure><figcaption id="cap-stables"></figcaption><div id="chart-stables"></div></figure>
+  </div>
+</section>
+
+<section>
+  <h2>HSP-029 issuance simulator</h2>
+  <p class="dim">HSP-029 (passed Nov 2, 2026, as reported) cuts NEAR's maximum annual
+  issuance from 2.5% to 1.6%: ~3 months grace, then a linear 24-month phase-in,
+  90/10 staker/treasury split kept. This is a <strong>model</strong>, not a measurement —
+  drag the sliders and watch the endpoints move. Model code: <span class="mono">model.js</span>,
+  unit tests: <span class="mono">test/model.test.mjs</span>.</p>
+  <div class="sim-controls">
+    <label>Staking ratio <span id="v-staking" class="mono"></span>
+      <input type="range" id="in-staking" min="0.30" max="0.60" step="0.01"></label>
+    <label>Fee burn, NEAR/year <span id="v-burn" class="mono"></span>
+      <input type="range" id="in-burn" min="0" max="10000000" step="250000"></label>
+    <label>Total supply, NEAR <span id="v-supply" class="mono"></span>
+      <input type="range" id="in-supply" min="1200000000" max="1450000000" step="10000000"></label>
+  </div>
+  <div id="sim-stats" class="stats"></div>
+  <div class="charts">
+    <figure><figcaption>Maximum annual issuance rate, % — HSP-029 path</figcaption><div id="chart-rate"></div></figure>
+    <figure><figcaption>Cumulative NEAR not issued vs status quo</figcaption><div id="chart-saved"></div></figure>
+  </div>
+  <p class="dim" id="sim-reported"></p>
+</section>
+
+<section>
+  <h2>Chain snapshot (NEAR public RPC)</h2>
+  <div id="rpc" class="stats"></div>
+</section>
+
+<footer>
+  <h2>Sources</h2>
+  <ul id="sources"></ul>
+  <p class="dim">Reported figures (HSP-029 vote, buyback reporting) are labelled
+  "as reported" wherever used and are never mixed into the measured series.
+  Full method, evidence against, and what would change my mind: <span class="mono">THESIS.md</span>.
+  Not financial advice — an evidence exercise.</p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
