@@ -42,6 +42,38 @@
   <div id="scorecard" class="scorecard"></div>
 </section>
 
+<section id="scenario-lab" class="lab">
+  <h2>Scenario lab <span class="est-tag">Model · estimates only</span></h2>
+  <p class="dim">Everything above is the actual fetched data, and this lab never changes it.
+  What follows is a <strong>model</strong>: drag a driver and the statistics arithmetically
+  linked to it are re-inferred live, holding the coupling ratios at their actual values
+  (every ratio is printed at the bottom of this section). Inferred figures are labelled
+  <span class="est-tag">est</span> and shown next to the actual value with the difference.
+  The scorecard verdicts are re-run under your scenario with the same stated rules.</p>
+  <div class="sim-controls">
+    <label>Intents fees per day, USD <span id="lab-v-fees" class="mono"></span>
+      <input type="range" id="lab-fees" step="any"></label>
+    <label>NEAR price, USD <span id="lab-v-price" class="mono"></span>
+      <input type="range" id="lab-price" step="any"></label>
+    <label>Fee burn, NEAR/year <span id="lab-v-burn" class="mono"></span>
+      <input type="range" id="lab-burn" step="250000"></label>
+    <label>Total accounts (holders proxy) <span id="lab-v-accounts" class="mono"></span>
+      <input type="range" id="lab-accounts" step="any"></label>
+    <label>Transactions per day <span id="lab-v-txns" class="mono"></span>
+      <input type="range" id="lab-txns" step="any"></label>
+  </div>
+  <div class="lab-actions">
+    <button type="button" id="lab-reset" class="btn">Reset to actuals</button>
+  </div>
+  <div id="lab-stats" class="stats"></div>
+  <h3>Scorecard under your scenario</h3>
+  <p class="dim">Same claims, same rules — only the inputs named in the coupling note below move.
+  TVL, stablecoin history and 1y price history stay at their actuals, so those three
+  verdicts cannot change here.</p>
+  <div id="lab-verdicts" class="scorecard"></div>
+  <p class="dim" id="lab-couplings"></p>
+</section>
+
 <section>
   <h2>The numbers</h2>
   <div class="charts">

@@ -60,6 +60,18 @@
    "url": "https://rpc.mainnet.near.org",
    "ok": true,
    "fetchedAt": "2026-11-07T20:55:21.364Z"
+  },
+  {
+   "name": "NearBlocks daily chain charts (transactions, accounts)",
+   "url": "https://api.nearblocks.io/v1/charts",
+   "ok": true,
+   "fetchedAt": "2026-11-08T04:44:02.000Z"
+  },
+  {
+   "name": "NearBlocks chain stats (total transactions cross-check)",
+   "url": "https://api.nearblocks.io/v1/stats",
+   "ok": true,
+   "fetchedAt": "2026-11-08T04:44:02.000Z"
   }
  ],
  "series": {
@@ -17142,7 +17154,13 @@
    "validatorCount": 352,
    "epochLength": null,
    "nodeVersion": "2.14.0"
-  }
+  },
+  "txnsPerDay30dAvg": 663381.9,
+  "txnsPerDayLatest": 682432,
+  "txnsWindowStart": "2026-10-09",
+  "txnsAsOfDate": "2026-11-07",
+  "totalAccounts": 278797181,
+  "totalAccountsAsOf": "2026-11-07"
  },
  "scorecard": [
   {

@@ -76,15 +76,18 @@ so "the market isn't pricing it" is **contradicted** too. Full write-up:
 Disclosure (per the hackathon's two-project rule): my other submitted
 project in this hackathon is:
 
-- **Moon or Rug** — a memecoin survival game (Games With Real
-  Economies track): 14 days of launches, agent rivals, one bankroll —
-  how long do you survive?
+- **Pump Rider** — a one-button arcade game (Games With Real Economies
+  track): ride a rocket over a scrolling memecoin chart, hold to pump,
+  let go to fall, dodge the rug pulls.
 
 Also built by me during this hackathon, but not submitted:
 
 - **STREAK** — a memecoin with a daily streak mechanic (Memecoins With
   Mechanics track): check in daily, the community target mints, a miss
   burns, the streak is the high score.
+- **Moon or Rug** — a memecoin survival game (Games With Real
+  Economies track): 14 days of launches, agent rivals, one bankroll —
+  how long do you survive?
 
 Hackathon rule note: one person may submit at most 2 projects, and each
 submitted project's README must name the other submitted project(s).

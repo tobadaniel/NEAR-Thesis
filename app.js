@@ -3,6 +3,7 @@
 // simulator with model.js. No libraries; charts are inline SVG.
 
 import { simulate, summarise, MODEL_DEFAULTS } from './model.js';
+import { buildBaseline, inferScenario } from './scenario.js';
 
 const $ = (id) => document.getElementById(id);
 const fmtUsd = (v, d = 0) => (v == null ? 'unavailable' : `$${v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d })}`);
@@ -159,6 +160,7 @@ function render(data) {
   $('sim-reported').textContent = `As reported for comparison (not model output): ${R.reportedFewerIssued}; projected yield ${R.reportedYieldPath}; passed with ${R.veNearInFavour} in favour (${R.supportPct} support); split kept at ${R.splitKept}; ${R.grace}; phase-in ${R.phaseIn}.`;
 
   initSimulator();
+  initLab(data);
 }
 
 // ------------------------------------------------------------- simulator ---
@@ -196,6 +198,137 @@ function initSimulator() {
     for (const el of [inStaking, inBurn, inSupply]) el.addEventListener('input', run);
     initSimulator.attached = true;
   }
+  run();
+}
+
+// ---------------------------------------------------------- scenario lab ---
+// A clearly separated model (scenario.js): the actuals rendered above are
+// never touched. Sliders bend driver inputs; the coupled statistics are
+// re-inferred at the actual ratios and shown next to their actual values.
+
+function deltaHtml(inferred, actual, mode = 'pct') {
+  if (inferred == null || actual == null) return '<span class="delta flat">no actual to compare</span>';
+  if (mode === 'pts') {
+    const d = inferred - actual;
+    if (Math.abs(d) < 0.005) return '<span class="delta flat">matches actual</span>';
+    return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${d.toFixed(2)} pts vs actual</span>`;
+  }
+  if (actual === 0) return '<span class="delta flat">actual is 0</span>';
+  const d = ((inferred - actual) / Math.abs(actual)) * 100;
+  if (Math.abs(d) < 0.05) return '<span class="delta flat">matches actual</span>';
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${d.toFixed(1)}% vs actual</span>`;
+}
+
+function estStat(label, inferredText, actualText, inferred, actual, mode = 'pct', sub = '') {
+  return `<div class="stat est"><span class="k">${label} <span class="est-tag">est</span></span>` +
+    `<span class="v">${inferredText}</span>` +
+    `<span class="s">actual ${actualText}</span>` +
+    `${deltaHtml(inferred, actual, mode)}${sub ? `<span class="s">${sub}</span>` : ''}</div>`;
+}
+
+function initLab(data) {
+  const M = data.metrics;
+  const baseline = buildBaseline(M, {
+    supply: MODEL_DEFAULTS.totalSupply,
+    feeBurnAnnual: MODEL_DEFAULTS.feeBurnAnnual,
+  });
+  const A = baseline.actuals;
+  const C = baseline.couplings;
+  const els = {
+    fees: $('lab-fees'), price: $('lab-price'), burn: $('lab-burn'),
+    accounts: $('lab-accounts'), txns: $('lab-txns'),
+  };
+  const setRange = (el, min, max, value, step) => {
+    if (!el) return;
+    if (value == null) { const lab = el.closest('label'); if (lab) lab.style.display = 'none'; return; }
+    el.min = min; el.max = max;
+    // step "any" where the actual is not on a round grid, so the slider
+    // rests exactly on the actual value (identity: no bend, no delta).
+    if (step != null) el.step = step;
+    el.value = value;
+  };
+  setRange(els.fees, 0, Math.ceil((A.intentsFeesPerDay * 3) / 1000) * 1000, A.intentsFeesPerDay, 'any');
+  setRange(els.price, 0.25, 25, A.nearPrice, 'any');
+  setRange(els.burn, 0, 10_000_000, A.feeBurnAnnual, 250_000);
+  setRange(els.accounts, Math.floor(A.accounts * 0.1), Math.ceil(A.accounts * 3), A.accounts, 'any');
+  setRange(els.txns, 0, Math.ceil(A.txnsPerDay * 3), A.txnsPerDay, 'any');
+
+  const fmtUsdSmall = (v) => (v == null ? 'unavailable' : (Math.abs(v) < 10 ? `$${v.toFixed(3)}` : fmtUsd(v, 2)));
+  const fmtSigned = (v) => (v == null ? 'unavailable' : `${v < 0 ? '−' : '+'}${fmtNum(Math.abs(v))}`);
+
+  function run() {
+    const drivers = {
+      intentsFeesPerDay: Number(els.fees.value),
+      nearPrice: Number(els.price.value),
+      feeBurnAnnual: Number(els.burn.value),
+      accounts: A.accounts == null ? null : Number(els.accounts.value),
+      txnsPerDay: A.txnsPerDay == null ? null : Number(els.txns.value),
+    };
+    $('lab-v-fees').textContent = fmtUsd(drivers.intentsFeesPerDay) + '/day';
+    $('lab-v-price').textContent = `$${drivers.nearPrice.toFixed(2)}`;
+    $('lab-v-burn').textContent = `${fmtNum(drivers.feeBurnAnnual)} NEAR`;
+    if (A.accounts != null) $('lab-v-accounts').textContent = fmtNum(drivers.accounts);
+    if (A.txnsPerDay != null) $('lab-v-txns').textContent = `${fmtNum(drivers.txnsPerDay)}/day`;
+
+    const { inferred, verdicts } = inferScenario(baseline, drivers);
+    const I = inferred;
+    const cards = [
+      estStat('Intents revenue / day', fmtUsd(I.intentsRevenuePerDay) + '/day', fmtUsd(A.intentsRevenuePerDay) + '/day', I.intentsRevenuePerDay, A.intentsRevenuePerDay),
+      estStat('All-chain revenue / day', fmtUsd(I.chainRevenuePerDay) + '/day', fmtUsd(A.chainRevenuePerDay) + '/day', I.chainRevenuePerDay, A.chainRevenuePerDay),
+      estStat('Intents share of chain revenue', I.intentsSharePct == null ? 'unavailable' : `${I.intentsSharePct.toFixed(1)}%`, A.intentsSharePct == null ? 'unavailable' : `${A.intentsSharePct.toFixed(1)}%`, I.intentsSharePct, A.intentsSharePct, 'pts'),
+      estStat('Annualised Intents revenue', fmtUsd(I.annualisedIntentsRevenue), fmtUsd(A.annualisedIntentsRevenue), I.annualisedIntentsRevenue, A.annualisedIntentsRevenue),
+      estStat('Market cap', fmtUsd(I.marketCap), fmtUsd(A.marketCap), I.marketCap, A.marketCap),
+      estStat('Annualised revenue / market cap', I.revenueToMarketCapPct == null ? 'unavailable' : `${I.revenueToMarketCapPct.toFixed(2)}%/yr`, A.revenueToMarketCapPct == null ? 'unavailable' : `${A.revenueToMarketCapPct.toFixed(2)}%/yr`, I.revenueToMarketCapPct, A.revenueToMarketCapPct, 'pts'),
+    ];
+    if (I.chainFeesPerDay != null) {
+      cards.push(estStat('Chain fees / day', fmtUsd(I.chainFeesPerDay) + '/day', fmtUsd(A.chainFeesPerDay) + '/day', I.chainFeesPerDay, A.chainFeesPerDay, 'pct', 'at the actual fee per transaction'));
+    }
+    if (I.revenuePerAccountPerYear != null) {
+      cards.push(estStat('Chain revenue per account / yr', fmtUsdSmall(I.revenuePerAccountPerYear), fmtUsdSmall(A.revenuePerAccountPerYear), I.revenuePerAccountPerYear, A.revenuePerAccountPerYear));
+    }
+    cards.push(estStat('Fee burn value / yr', fmtUsd(I.burnUsdPerYear), fmtUsd(A.feeBurnAnnual * A.nearPrice), I.burnUsdPerYear, A.feeBurnAnnual * A.nearPrice, 'pct', 'burn priced at the scenario NEAR price'));
+    cards.push(estStat('Net supply change / yr @ 2.5%', `${fmtSigned(I.netSupplyStatusQuoPerYear)} NEAR`, `${fmtSigned(A ? (C.issuanceRateStatusQuo * C.supply - A.feeBurnAnnual) : null)} NEAR`, I.netSupplyStatusQuoPerYear, C.issuanceRateStatusQuo * C.supply - A.feeBurnAnnual, 'pct', 'status-quo issuance minus burn'));
+    cards.push(estStat('Net supply change / yr @ 1.6%', `${fmtSigned(I.netSupplyHsp029PerYear)} NEAR`, `${fmtSigned(C.issuanceRateHsp029 * C.supply - A.feeBurnAnnual)} NEAR`, I.netSupplyHsp029PerYear, C.issuanceRateHsp029 * C.supply - A.feeBurnAnnual, 'pct', 'HSP-029 rate (phased in) minus burn'));
+    $('lab-stats').innerHTML = cards.join('');
+
+    $('lab-verdicts').innerHTML = data.scorecard.map((c) => {
+      const v = verdicts.find((x) => x.id === c.id);
+      const verdict = v ? v.verdict : c.verdict;
+      const differs = verdict !== c.verdict;
+      return `<div class="card${differs ? ' differs' : ''}">
+        <span class="badge ${verdict}">${verdict}</span>${differs ? '<span class="scenario-tag">under your scenario</span>' : ''}
+        <p class="claim">${c.claim}</p>
+      </div>`;
+    }).join('');
+  }
+
+  if (!initLab.attached) {
+    for (const el of Object.values(els)) if (el) el.addEventListener('input', run);
+    $('lab-reset').addEventListener('click', () => {
+      els.fees.value = A.intentsFeesPerDay;
+      els.price.value = A.nearPrice;
+      els.burn.value = A.feeBurnAnnual;
+      if (A.accounts != null) els.accounts.value = A.accounts;
+      if (A.txnsPerDay != null) els.txns.value = A.txnsPerDay;
+      run();
+    });
+    initLab.attached = true;
+  }
+
+  $('lab-couplings').textContent =
+    `How this model couples things — Intents revenue = Intents fees × ${C.revenuePerFee == null ? 'n/a' : C.revenuePerFee.toFixed(4)} ` +
+    `(the actual ratio: ${fmtUsd(A.intentsRevenuePerDay)}/day of revenue on ${fmtUsd(A.intentsFeesPerDay)}/day of fees, 30d avg). ` +
+    `All-chain revenue adds the non-Intents remainder, held at its actual ${fmtUsd(C.nonIntentsRevenuePerDay)}/day. ` +
+    `Annualised = daily × 365. Market cap = price × ${fmtNum(C.supply)} NEAR supply (as reported — the same supply behind the dashboard's market cap). ` +
+    (C.feesPerTxn != null
+      ? `Chain fees = $${C.feesPerTxn.toFixed(4)} per transaction (actual ${fmtUsd(A.chainFeesPerDay)}/day over ${fmtNum(A.txnsPerDay)} transactions/day, NearBlocks 30d avg, ${M.txnsWindowStart} to ${M.txnsAsOfDate}) × your transactions/day. `
+      : '') +
+    (A.accounts != null
+      ? `Revenue per account divides annualised chain revenue by total accounts: ${fmtNum(A.accounts)} (NearBlocks daily charts — new minus deleted accounts since genesis, as of ${M.totalAccountsAsOf}). That is a holders proxy: it counts every account ever created, not just wallets holding a balance. `
+      : '') +
+    `Net supply change = issuance (${fmtNum(C.issuanceRateStatusQuo * C.supply)} NEAR/yr at the 2.5% status quo, ${fmtNum(C.issuanceRateHsp029 * C.supply)} at the 1.6% HSP-029 rate) minus fee burn. ` +
+    `The burn anchor, ${fmtNum(A.feeBurnAnnual)} NEAR/yr, is the HSP-029 simulator's stated assumption, not a measurement. Nothing in this lab overwrites the actuals above.`;
+
   run();
 }
 

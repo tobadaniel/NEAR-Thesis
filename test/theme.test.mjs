@@ -14,5 +14,10 @@ assert.ok(html.includes('id="theme-toggle"'), 'dist contains the theme toggle bu
 assert.ok(html.includes("localStorage.getItem('near-thesis-theme')"), 'dist reads the persisted theme choice');
 assert.ok(html.includes("localStorage.setItem(THEME_KEY"), 'dist persists the theme choice on toggle');
 assert.ok(html.includes('--chart-accent'), 'dist defines themed chart colours');
+// Regression guard: the JS inlined by build-single.mjs formats money with
+// `$${...}` template literals. If the build ever goes back to string
+// replacements in String.replace, "$$" collapses and every price in the
+// bundle loses its dollar sign.
+assert.ok(html.includes('`$${'), 'dist keeps the literal $ in `$${...}` money templates (build replace pitfall)');
 
 console.log('theme.test.mjs: all assertions passed');

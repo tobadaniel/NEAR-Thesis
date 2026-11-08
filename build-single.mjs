@@ -13,18 +13,23 @@ function stripModuleSyntax(code) {
 
 const css = readFileSync('style.css', 'utf8');
 const data = readFileSync('data.json', 'utf8');
-const js = ['model.js', 'app.js']
+const js = ['model.js', 'scenario.js', 'app.js']
   .map((f) => stripModuleSyntax(readFileSync(f, 'utf8')))
   .join('\n\n');
 
 let html = readFileSync('index.html', 'utf8');
+// Replacement FUNCTIONS, not strings: String.replace treats "$$" in a
+// replacement string as an escaped literal "$", which silently ate the
+// dollar sign of every `$${...}` template in the inlined JS (the bundle
+// showed "67,187/day" instead of "$67,187/day"). A function replacement
+// is inserted verbatim.
 html = html.replace(
   '<link rel="stylesheet" href="style.css">',
-  `<style>\n${css}\n</style>`,
+  () => `<style>\n${css}\n</style>`,
 );
 html = html.replace(
   '<script type="module" src="app.js"></script>',
-  `<script>window.__NEAR_DATA__ = ${data};</script>\n<script type="module">\n${js}\n</script>`,
+  () => `<script>window.__NEAR_DATA__ = ${data};</script>\n<script type="module">\n${js}\n</script>`,
 );
 
 mkdirSync('dist', { recursive: true });

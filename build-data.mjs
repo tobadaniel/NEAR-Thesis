@@ -148,6 +148,26 @@ const rpcInfo = {
   nodeVersion: rpcStatus && rpcStatus.version ? rpcStatus.version.version : null,
 };
 
+// 9. NearBlocks daily chain charts: transactions per day and the total
+// account count. The charts endpoint returns one row per day since
+// genesis (2020-07-21) with txns, new_accounts and deleted_accounts.
+// Total accounts = sum(new) - sum(deleted) over the full history; the
+// sum of daily txns cross-checks against /v1/stats total_txns (they
+// agree to ~0.0003%). NOTE: total accounts counts every account ever
+// created, net of deletions — it is a holders PROXY, not a count of
+// balance-holding wallets.
+const nbChartsRaw = await fetchJson('NearBlocks daily chain charts (transactions, accounts)',
+  'https://api.nearblocks.io/v1/charts');
+const nbStatsRaw = await fetchJson('NearBlocks chain stats (total transactions cross-check)',
+  'https://api.nearblocks.io/v1/stats');
+const nbCharts = (nbChartsRaw && nbChartsRaw.charts) || [];
+const nbLast30 = nbCharts.slice(-30);
+const nbTxnsPerDay30dAvg = nbLast30.length
+  ? nbLast30.reduce((a, r) => a + Number(r.txns), 0) / nbLast30.length : null;
+const nbTotalAccounts = nbCharts.length
+  ? nbCharts.reduce((a, r) => a + Number(r.new_accounts) - Number(r.deleted_accounts), 0) : null;
+const nbLastRow = nbCharts.length ? nbCharts[nbCharts.length - 1] : null;
+
 // --------------------------------------------------------------- metrics ---
 
 const metrics = {
@@ -176,6 +196,12 @@ const metrics = {
   annualisedRevenue: null,
   marketCap: null,
   revenueToMarketCapPct: null,
+  txnsPerDay30dAvg: nbTxnsPerDay30dAvg,
+  txnsPerDayLatest: nbLastRow ? Number(nbLastRow.txns) : null,
+  txnsWindowStart: nbLast30.length ? String(nbLast30[0].date).slice(0, 10) : null,
+  txnsAsOfDate: nbLastRow ? String(nbLastRow.date).slice(0, 10) : null,
+  totalAccounts: nbTotalAccounts,
+  totalAccountsAsOf: nbLastRow ? String(nbLastRow.date).slice(0, 10) : null,
   rpc: rpcInfo,
 };
 

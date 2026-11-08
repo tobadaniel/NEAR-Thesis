@@ -23,8 +23,9 @@
    reads from the --chart-* variables) comes from these variables. */
 :root, :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0e1116; --panel: #161c26; --panel2: #1c2432; --ink: #e9edf4;
-  --dim: #9aa7ba; --line: #2a3446; --accent: #00ec97;
+  --bg: #000000; --panel: #070708; --panel2: #101012; --ink: #f4f4f2;
+  --heading: #f8f8f6;
+  --dim: #b8bbb8; --line: #26262b; --accent: #00ec97;
   --green: #3fb96f; --amber: #e0a83c; --red: #e05c5c; --blue: #5ea8e8;
   --chart-blue: #5ea8e8; --chart-accent: #00ec97; --chart-amber: #e0a83c;
   --chart-purple: #b07fe8; --chart-green: #3fb96f;
@@ -34,8 +35,9 @@
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f6f1e7; --panel: #fffdf7; --panel2: #f1e9d8; --ink: #24313a;
-  --dim: #57666f; --line: #ddd2bd; --accent: #007a52;
+  --bg: #f6f1e7; --panel: #fffdf7; --panel2: #f1e9d8; --ink: #111111;
+  --heading: #000000;
+  --dim: #3d4750; --line: #ddd2bd; --accent: #007a52;
   --green: #22733f; --amber: #8f6206; --red: #b02f2f; --blue: #2f6db3;
   --chart-blue: #2f7fc9; --chart-accent: #00875f; --chart-amber: #b97a0e;
   --chart-purple: #7c4dc4; --chart-green: #2e9e5b;
@@ -48,6 +50,8 @@ body { margin: 0 auto; max-width: 1080px; padding: 22px 16px 40px; background: v
   font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 h1 { font-size: 30px; margin: 0 0 6px; }
 h2 { font-size: 19px; margin: 26px 0 8px; }
+h3 { font-size: 16px; margin: 18px 0 8px; }
+h1, h2, h3, .stat .v, .card .claim, figcaption b { color: var(--heading); }
 .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .theme-toggle { flex: none; cursor: pointer; background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px;
@@ -83,6 +87,26 @@ svg.chart .grid { stroke: var(--line); stroke-width: .5; }
 .sim-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 12px 0; }
 .sim-controls label { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; color: var(--dim); display: block; }
 .sim-controls input[type=range] { width: 100%; margin-top: 8px; accent-color: var(--accent); }
+/* ------------------------------------------------------- scenario lab --- */
+.lab { border: 1.5px dashed var(--line); border-radius: 14px; padding: 2px 16px 16px; margin-top: 28px; }
+.est-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 1px 7px;
+  vertical-align: middle; white-space: nowrap; }
+h2 .est-tag { margin-left: 6px; }
+.stat.est { border-style: dashed; }
+.stat .delta { display: block; font-size: 12.5px; font-weight: 600; }
+.delta.up { color: var(--green); }
+.delta.down { color: var(--red); }
+.delta.flat { color: var(--dim); font-weight: 400; }
+.btn { cursor: pointer; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px;
+  font: inherit; font-size: 13.5px; line-height: 1.3; }
+.btn:hover { background: var(--panel2); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lab-actions { margin: 12px 0 4px; }
+.card.differs { outline: 2px solid var(--amber); outline-offset: -1px; }
+.scenario-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--amber); margin-left: 6px; }
 footer ul { color: var(--dim); font-size: 13px; padding-left: 18px; }
 footer li { margin: 3px 0; word-break: break-all; }
 .ok { color: var(--green); } .fail { color: var(--red); }
@@ -110,6 +134,38 @@ footer li { margin: 3px 0; word-break: break-all; }
   <p class="dim">Each claim gets a verdict from a stated rule, applied to the fetched data.
   Contradicted claims stay on the board — that is the point of testing a thesis.</p>
   <div id="scorecard" class="scorecard"></div>
+</section>
+
+<section id="scenario-lab" class="lab">
+  <h2>Scenario lab <span class="est-tag">Model · estimates only</span></h2>
+  <p class="dim">Everything above is the actual fetched data, and this lab never changes it.
+  What follows is a <strong>model</strong>: drag a driver and the statistics arithmetically
+  linked to it are re-inferred live, holding the coupling ratios at their actual values
+  (every ratio is printed at the bottom of this section). Inferred figures are labelled
+  <span class="est-tag">est</span> and shown next to the actual value with the difference.
+  The scorecard verdicts are re-run under your scenario with the same stated rules.</p>
+  <div class="sim-controls">
+    <label>Intents fees per day, USD <span id="lab-v-fees" class="mono"></span>
+      <input type="range" id="lab-fees" step="any"></label>
+    <label>NEAR price, USD <span id="lab-v-price" class="mono"></span>
+      <input type="range" id="lab-price" step="any"></label>
+    <label>Fee burn, NEAR/year <span id="lab-v-burn" class="mono"></span>
+      <input type="range" id="lab-burn" step="250000"></label>
+    <label>Total accounts (holders proxy) <span id="lab-v-accounts" class="mono"></span>
+      <input type="range" id="lab-accounts" step="any"></label>
+    <label>Transactions per day <span id="lab-v-txns" class="mono"></span>
+      <input type="range" id="lab-txns" step="any"></label>
+  </div>
+  <div class="lab-actions">
+    <button type="button" id="lab-reset" class="btn">Reset to actuals</button>
+  </div>
+  <div id="lab-stats" class="stats"></div>
+  <h3>Scorecard under your scenario</h3>
+  <p class="dim">Same claims, same rules — only the inputs named in the coupling note below move.
+  TVL, stablecoin history and 1y price history stay at their actuals, so those three
+  verdicts cannot change here.</p>
+  <div id="lab-verdicts" class="scorecard"></div>
+  <p class="dim" id="lab-couplings"></p>
 </section>
 
 <section>
@@ -222,6 +278,18 @@ footer li { margin: 3px 0; word-break: break-all; }
    "url": "https://rpc.mainnet.near.org",
    "ok": true,
    "fetchedAt": "2026-11-07T20:55:21.364Z"
+  },
+  {
+   "name": "NearBlocks daily chain charts (transactions, accounts)",
+   "url": "https://api.nearblocks.io/v1/charts",
+   "ok": true,
+   "fetchedAt": "2026-11-08T04:44:02.000Z"
+  },
+  {
+   "name": "NearBlocks chain stats (total transactions cross-check)",
+   "url": "https://api.nearblocks.io/v1/stats",
+   "ok": true,
+   "fetchedAt": "2026-11-08T04:44:02.000Z"
   }
  ],
  "series": {
@@ -17304,7 +17372,13 @@ footer li { margin: 3px 0; word-break: break-all; }
    "validatorCount": 352,
    "epochLength": null,
    "nodeVersion": "2.14.0"
-  }
+  },
+  "txnsPerDay30dAvg": 663381.9,
+  "txnsPerDayLatest": 682432,
+  "txnsWindowStart": "2026-10-09",
+  "txnsAsOfDate": "2026-11-07",
+  "totalAccounts": 278797181,
+  "totalAccountsAsOf": "2026-11-07"
  },
  "scorecard": [
   {
@@ -17451,14 +17525,210 @@ function summarise(rows) {
 }
 
 
+// scenario.js — the Scenario lab coupling model. Pure math, no I/O,
+// unit-testable (test/scenario.test.mjs).
+//
+// The dashboard above the lab shows ACTUAL fetched statistics and is
+// never touched by this module. The lab takes a small set of driver
+// inputs, defaults them to the actuals, and re-infers the statistics
+// that are arithmetically linked to those drivers, holding every
+// coupling ratio at the value computed from the actual dataset:
+//
+//   - Intents revenue = Intents fees x (actual Intents revenue / fees).
+//   - All-chain revenue = inferred Intents revenue + the non-Intents
+//     remainder of actual chain revenue, held constant.
+//   - Annualised figures = daily x 365. Market cap = price x supply
+//     (the same 1.31B supply the dashboard's market cap uses).
+//   - Chain fees = (actual chain fees / actual txns per day) x the
+//     scenario transactions per day: the blended fee per transaction
+//     is held at its actual ratio.
+//   - Chain revenue per account = annualised chain revenue / total
+//     accounts (NearBlocks total accounts, a holders proxy — every
+//     account ever created net of deletions, not wallets with a
+//     balance).
+//   - Net supply change per year = issuance at a stated rate
+//     (2.5% status quo, or 1.6% under HSP-029 once phased in) minus
+//     the fee-burn driver. The burn anchor is the HSP-029 simulator's
+//     stated assumption (model.js MODEL_DEFAULTS), not a measurement.
+//
+// The five scorecard verdicts are re-evaluated with exactly the rules
+// stated in build-data.mjs, including the "mixed" middle bands. Only
+// two verdicts have scenario-driven inputs (Intents revenue share and
+// annualised revenue / market cap). The other three rules read
+// historical series (TVL vs peak, stablecoin 1y change, price 1y
+// change and Intents revenue growth) that no driver bends, so they
+// re-evaluate to their actual verdicts by construction.
+
+// Build the baseline: actuals + coupling ratios, from data.json metrics.
+// opts: { supply, feeBurnAnnual } — supply is the reported ~1.31B total
+// supply the dashboard's market cap already uses; feeBurnAnnual is the
+// simulator's burn assumption, the burn driver's anchor.
+function buildBaseline(metrics, opts = {}) {
+  const supply = opts.supply ?? 1_310_000_000;
+  const feeBurnAnnual = opts.feeBurnAnnual ?? 2_000_000;
+  const price = metrics.priceCurrent ?? metrics.priceNow ?? null;
+  const intentsFees = metrics.intentsFees30dAvg ?? null;
+  const intentsRevenue = metrics.intentsRevenue30dAvg ?? null;
+  const chainRevenue = metrics.chainRevenue30dAvg ?? null;
+  const chainFees = metrics.chainFees30dAvg ?? null;
+  const txnsPerDay = metrics.txnsPerDay30dAvg ?? null;
+  const accounts = metrics.totalAccounts ?? null;
+
+  const annualisedIntentsRevenue = intentsRevenue != null ? intentsRevenue * 365 : null;
+  const marketCap = price != null ? price * supply : null;
+
+  const tvlBelowPeakPct = (metrics.tvlNow != null && metrics.tvlPeak)
+    ? ((metrics.tvlPeak - metrics.tvlNow) / metrics.tvlPeak) * 100 : null;
+  const intentsRevenueGrowthPct = (metrics.intentsRevenueEarly90dAvg && metrics.intentsRevenueLast90dAvg)
+    ? ((metrics.intentsRevenueLast90dAvg - metrics.intentsRevenueEarly90dAvg)
+      / metrics.intentsRevenueEarly90dAvg) * 100 : null;
+
+  const actuals = {
+    intentsFeesPerDay: intentsFees,
+    nearPrice: price,
+    feeBurnAnnual,
+    accounts,
+    txnsPerDay,
+    intentsRevenuePerDay: intentsRevenue,
+    chainRevenuePerDay: chainRevenue,
+    chainFeesPerDay: chainFees,
+    intentsSharePct: (intentsRevenue != null && chainRevenue)
+      ? (intentsRevenue / chainRevenue) * 100 : null,
+    annualisedIntentsRevenue,
+    marketCap,
+    revenueToMarketCapPct: (annualisedIntentsRevenue != null && marketCap)
+      ? (annualisedIntentsRevenue / marketCap) * 100 : null,
+    revenuePerAccountPerYear: (chainRevenue != null && accounts)
+      ? (chainRevenue * 365) / accounts : null,
+  };
+
+  const couplings = {
+    supply,
+    revenuePerFee: (intentsRevenue != null && intentsFees) ? intentsRevenue / intentsFees : null,
+    nonIntentsRevenuePerDay: (chainRevenue != null && intentsRevenue != null)
+      ? chainRevenue - intentsRevenue : null,
+    feesPerTxn: (chainFees != null && txnsPerDay) ? chainFees / txnsPerDay : null,
+    issuanceRateStatusQuo: 0.025, // today's maximum issuance (see model.js)
+    issuanceRateHsp029: 0.016,     // HSP-029 target after the phase-in
+  };
+
+  // Historical inputs to verdict rules that no driver can bend.
+  const history = {
+    tvlBelowPeakPct,
+    stablesChange1yPct: metrics.stablesChange1yPct ?? null,
+    priceChange1yPct: metrics.priceChange1yPct ?? null,
+    intentsRevenueGrowthPct,
+  };
+
+  return { actuals, couplings, history };
+}
+
+// The stated verdict rules, mirroring build-data.mjs exactly.
+function evaluateVerdicts(v) {
+  const out = {};
+  out['intents-dominates-revenue'] =
+    v.intentsSharePct == null ? 'mixed'
+      : v.intentsSharePct >= 50 ? 'supported'
+        : v.intentsSharePct < 25 ? 'contradicted' : 'mixed';
+  out['tvl-not-the-story'] =
+    v.tvlBelowPeakPct == null ? 'mixed'
+      : v.tvlBelowPeakPct >= 60 ? 'supported'
+        : v.tvlBelowPeakPct < 25 ? 'contradicted' : 'mixed';
+  out['fee-capture-material'] =
+    v.revenueToMarketCapPct == null ? 'mixed'
+      : v.revenueToMarketCapPct >= 0.5 ? 'supported'
+        : v.revenueToMarketCapPct < 0.1 ? 'contradicted' : 'mixed';
+  out['stablecoin-rails'] =
+    v.stablesChange1yPct == null ? 'mixed'
+      : v.stablesChange1yPct > 10 ? 'supported'
+        : v.stablesChange1yPct < -10 ? 'contradicted' : 'mixed';
+  out['market-not-pricing'] =
+    (v.priceChange1yPct != null && v.intentsRevenueGrowthPct != null
+      && v.intentsRevenueGrowthPct > 100 && v.priceChange1yPct < 0) ? 'supported'
+      : (v.priceChange1yPct != null && v.priceChange1yPct > 50) ? 'contradicted' : 'mixed';
+  return out;
+}
+
+// Run one scenario. drivers: { intentsFeesPerDay, nearPrice,
+// feeBurnAnnual, accounts, txnsPerDay } — any omitted driver falls back
+// to its actual value. Returns the inferred statistics and verdicts.
+function inferScenario(baseline, drivers = {}) {
+  const A = baseline.actuals;
+  const C = baseline.couplings;
+  const d = {
+    intentsFeesPerDay: drivers.intentsFeesPerDay ?? A.intentsFeesPerDay,
+    nearPrice: drivers.nearPrice ?? A.nearPrice,
+    feeBurnAnnual: drivers.feeBurnAnnual ?? A.feeBurnAnnual,
+    accounts: drivers.accounts ?? A.accounts,
+    txnsPerDay: drivers.txnsPerDay ?? A.txnsPerDay,
+  };
+
+  const intentsRevenuePerDay = (d.intentsFeesPerDay != null && C.revenuePerFee != null)
+    ? d.intentsFeesPerDay * C.revenuePerFee : null;
+  const chainRevenuePerDay = (intentsRevenuePerDay != null && C.nonIntentsRevenuePerDay != null)
+    ? intentsRevenuePerDay + C.nonIntentsRevenuePerDay : null;
+  const intentsSharePct = (intentsRevenuePerDay != null && chainRevenuePerDay)
+    ? (intentsRevenuePerDay / chainRevenuePerDay) * 100 : null;
+  const annualisedIntentsRevenue = intentsRevenuePerDay != null ? intentsRevenuePerDay * 365 : null;
+  const marketCap = d.nearPrice != null ? d.nearPrice * C.supply : null;
+  const revenueToMarketCapPct = (annualisedIntentsRevenue != null && marketCap)
+    ? (annualisedIntentsRevenue / marketCap) * 100 : null;
+  const chainFeesPerDay = (C.feesPerTxn != null && d.txnsPerDay != null)
+    ? C.feesPerTxn * d.txnsPerDay : null;
+  const revenuePerAccountPerYear = (chainRevenuePerDay != null && d.accounts)
+    ? (chainRevenuePerDay * 365) / d.accounts : null;
+  const burnUsdPerYear = (d.feeBurnAnnual != null && d.nearPrice != null)
+    ? d.feeBurnAnnual * d.nearPrice : null;
+  const issuanceStatusQuoPerYear = C.issuanceRateStatusQuo * C.supply;
+  const issuanceHsp029PerYear = C.issuanceRateHsp029 * C.supply;
+  const netSupplyStatusQuoPerYear = d.feeBurnAnnual != null
+    ? issuanceStatusQuoPerYear - d.feeBurnAnnual : null;
+  const netSupplyHsp029PerYear = d.feeBurnAnnual != null
+    ? issuanceHsp029PerYear - d.feeBurnAnnual : null;
+  const burnShareOfIssuancePct = d.feeBurnAnnual != null
+    ? (d.feeBurnAnnual / issuanceStatusQuoPerYear) * 100 : null;
+
+  const verdictMap = evaluateVerdicts({
+    intentsSharePct,
+    revenueToMarketCapPct,
+    tvlBelowPeakPct: baseline.history.tvlBelowPeakPct,
+    stablesChange1yPct: baseline.history.stablesChange1yPct,
+    priceChange1yPct: baseline.history.priceChange1yPct,
+    intentsRevenueGrowthPct: baseline.history.intentsRevenueGrowthPct,
+  });
+
+  return {
+    drivers: d,
+    inferred: {
+      intentsRevenuePerDay,
+      chainRevenuePerDay,
+      intentsSharePct,
+      annualisedIntentsRevenue,
+      marketCap,
+      revenueToMarketCapPct,
+      chainFeesPerDay,
+      revenuePerAccountPerYear,
+      burnUsdPerYear,
+      issuanceStatusQuoPerYear,
+      issuanceHsp029PerYear,
+      netSupplyStatusQuoPerYear,
+      netSupplyHsp029PerYear,
+      burnShareOfIssuancePct,
+    },
+    verdicts: Object.entries(verdictMap).map(([id, verdict]) => ({ id, verdict })),
+  };
+}
+
+
 // app.js — renders the dashboard from data.json (or the inlined
 // window.__NEAR_DATA__ in the single-file build) and drives the HSP-029
 // simulator with model.js. No libraries; charts are inline SVG.
 
 
 
+
 const $ = (id) => document.getElementById(id);
-const fmtUsd = (v, d = 0) => (v == null ? 'unavailable' : `${v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d })}`);
+const fmtUsd = (v, d = 0) => (v == null ? 'unavailable' : `$${v.toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d })}`);
 const fmtNum = (v) => (v == null ? 'unavailable' : Math.round(v).toLocaleString('en-US'));
 const fmtPct = (v, d = 1) => (v == null ? 'unavailable' : `${v >= 0 ? '+' : ''}${v.toFixed(d)}%`);
 const dateOf = (t) => new Date(t * 1000).toISOString().slice(0, 10);
@@ -17555,21 +17825,21 @@ function drawDataCharts(data) {
     $(id).innerHTML = `<b>${title}</b> — source: ${source}${asOfT ? ` · as of ${dateOf(asOfT)}` : ''}`;
   };
   cap('cap-tvl', 'NEAR base-chain TVL, USD', 'DefiLlama /v2/historicalChainTvl/Near', M.tvlAsOf);
-  lineChart($('chart-tvl'), [{ data: S.tvl, color: C.blue }], (v) => `${compact(v)}`);
+  lineChart($('chart-tvl'), [{ data: S.tvl, color: C.blue }], (v) => `$${compact(v)}`);
   cap('cap-revenue', 'Daily revenue, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees/revenue summaries');
   lineChart($('chart-revenue'), [
     { data: S.intentsRevenue, color: C.accent },
     { data: S.chainRevenue, color: C.amber },
-  ], (v) => `${compact(v)}`);
+  ], (v) => `$${compact(v)}`);
   cap('cap-fees', 'Daily fees, USD — NEAR Intents vs all NEAR chain protocols', 'DefiLlama fees summaries');
   lineChart($('chart-fees'), [
     { data: S.intentsFees, color: C.accent },
     { data: S.chainFees, color: C.amber },
-  ], (v) => `${compact(v)}`);
+  ], (v) => `$${compact(v)}`);
   cap('cap-price', 'NEAR price, USD (weekly)', 'DefiLlama coins chart, coingecko:near', M.priceAsOf);
-  lineChart($('chart-price'), [{ data: S.price, color: C.purple }], (v) => `${v.toFixed(1)}`);
+  lineChart($('chart-price'), [{ data: S.price, color: C.purple }], (v) => `$${v.toFixed(1)}`);
   cap('cap-stables', 'Stablecoin supply on NEAR, USD', 'DefiLlama stablecoins, chain Near', M.stablesAsOf);
-  lineChart($('chart-stables'), [{ data: S.stables, color: C.green }], (v) => `${compact(v)}`);
+  lineChart($('chart-stables'), [{ data: S.stables, color: C.green }], (v) => `$${compact(v)}`);
 }
 
 function render(data) {
@@ -17579,7 +17849,7 @@ function render(data) {
   $('asof').textContent = `Data fetched ${data.fetchedAt.replace('T', ' ').slice(0, 19)} UTC · sources listed at the bottom · rebuild: node build-data.mjs`;
 
   $('stats').innerHTML = [
-    stat('NEAR price (live)', M.priceCurrent == null ? 'unavailable' : `${M.priceCurrent.toFixed(2)}`, `weekly chart ${fmtPct(M.priceChange1yPct)} / 1y`),
+    stat('NEAR price (live)', M.priceCurrent == null ? 'unavailable' : `$${M.priceCurrent.toFixed(2)}`, `weekly chart ${fmtPct(M.priceChange1yPct)} / 1y`),
     stat('Base-chain TVL', fmtUsd(M.tvlNow), `peak ${fmtUsd(M.tvlPeak)} · ${fmtPct(M.tvlChange1yPct)} / 1y`),
     stat('Intents revenue, 30d avg', fmtUsd(M.intentsRevenue30dAvg) + '/day', `${fmtUsd(M.intentsRevenue30dTotal)} in 30 days`),
     stat('All-NEAR chain revenue, 30d avg', fmtUsd(M.chainRevenue30dAvg) + '/day', `Intents is ${M.intentsShareOfChainRevenuePct == null ? 'n/a' : M.intentsShareOfChainRevenuePct.toFixed(0) + '%'} of it`),
@@ -17612,6 +17882,7 @@ function render(data) {
   $('sim-reported').textContent = `As reported for comparison (not model output): ${R.reportedFewerIssued}; projected yield ${R.reportedYieldPath}; passed with ${R.veNearInFavour} in favour (${R.supportPct} support); split kept at ${R.splitKept}; ${R.grace}; phase-in ${R.phaseIn}.`;
 
   initSimulator();
+  initLab(data);
 }
 
 // ------------------------------------------------------------- simulator ---
@@ -17649,6 +17920,137 @@ function initSimulator() {
     for (const el of [inStaking, inBurn, inSupply]) el.addEventListener('input', run);
     initSimulator.attached = true;
   }
+  run();
+}
+
+// ---------------------------------------------------------- scenario lab ---
+// A clearly separated model (scenario.js): the actuals rendered above are
+// never touched. Sliders bend driver inputs; the coupled statistics are
+// re-inferred at the actual ratios and shown next to their actual values.
+
+function deltaHtml(inferred, actual, mode = 'pct') {
+  if (inferred == null || actual == null) return '<span class="delta flat">no actual to compare</span>';
+  if (mode === 'pts') {
+    const d = inferred - actual;
+    if (Math.abs(d) < 0.005) return '<span class="delta flat">matches actual</span>';
+    return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${d.toFixed(2)} pts vs actual</span>`;
+  }
+  if (actual === 0) return '<span class="delta flat">actual is 0</span>';
+  const d = ((inferred - actual) / Math.abs(actual)) * 100;
+  if (Math.abs(d) < 0.05) return '<span class="delta flat">matches actual</span>';
+  return `<span class="delta ${d > 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${d.toFixed(1)}% vs actual</span>`;
+}
+
+function estStat(label, inferredText, actualText, inferred, actual, mode = 'pct', sub = '') {
+  return `<div class="stat est"><span class="k">${label} <span class="est-tag">est</span></span>` +
+    `<span class="v">${inferredText}</span>` +
+    `<span class="s">actual ${actualText}</span>` +
+    `${deltaHtml(inferred, actual, mode)}${sub ? `<span class="s">${sub}</span>` : ''}</div>`;
+}
+
+function initLab(data) {
+  const M = data.metrics;
+  const baseline = buildBaseline(M, {
+    supply: MODEL_DEFAULTS.totalSupply,
+    feeBurnAnnual: MODEL_DEFAULTS.feeBurnAnnual,
+  });
+  const A = baseline.actuals;
+  const C = baseline.couplings;
+  const els = {
+    fees: $('lab-fees'), price: $('lab-price'), burn: $('lab-burn'),
+    accounts: $('lab-accounts'), txns: $('lab-txns'),
+  };
+  const setRange = (el, min, max, value, step) => {
+    if (!el) return;
+    if (value == null) { const lab = el.closest('label'); if (lab) lab.style.display = 'none'; return; }
+    el.min = min; el.max = max;
+    // step "any" where the actual is not on a round grid, so the slider
+    // rests exactly on the actual value (identity: no bend, no delta).
+    if (step != null) el.step = step;
+    el.value = value;
+  };
+  setRange(els.fees, 0, Math.ceil((A.intentsFeesPerDay * 3) / 1000) * 1000, A.intentsFeesPerDay, 'any');
+  setRange(els.price, 0.25, 25, A.nearPrice, 'any');
+  setRange(els.burn, 0, 10_000_000, A.feeBurnAnnual, 250_000);
+  setRange(els.accounts, Math.floor(A.accounts * 0.1), Math.ceil(A.accounts * 3), A.accounts, 'any');
+  setRange(els.txns, 0, Math.ceil(A.txnsPerDay * 3), A.txnsPerDay, 'any');
+
+  const fmtUsdSmall = (v) => (v == null ? 'unavailable' : (Math.abs(v) < 10 ? `$${v.toFixed(3)}` : fmtUsd(v, 2)));
+  const fmtSigned = (v) => (v == null ? 'unavailable' : `${v < 0 ? '−' : '+'}${fmtNum(Math.abs(v))}`);
+
+  function run() {
+    const drivers = {
+      intentsFeesPerDay: Number(els.fees.value),
+      nearPrice: Number(els.price.value),
+      feeBurnAnnual: Number(els.burn.value),
+      accounts: A.accounts == null ? null : Number(els.accounts.value),
+      txnsPerDay: A.txnsPerDay == null ? null : Number(els.txns.value),
+    };
+    $('lab-v-fees').textContent = fmtUsd(drivers.intentsFeesPerDay) + '/day';
+    $('lab-v-price').textContent = `$${drivers.nearPrice.toFixed(2)}`;
+    $('lab-v-burn').textContent = `${fmtNum(drivers.feeBurnAnnual)} NEAR`;
+    if (A.accounts != null) $('lab-v-accounts').textContent = fmtNum(drivers.accounts);
+    if (A.txnsPerDay != null) $('lab-v-txns').textContent = `${fmtNum(drivers.txnsPerDay)}/day`;
+
+    const { inferred, verdicts } = inferScenario(baseline, drivers);
+    const I = inferred;
+    const cards = [
+      estStat('Intents revenue / day', fmtUsd(I.intentsRevenuePerDay) + '/day', fmtUsd(A.intentsRevenuePerDay) + '/day', I.intentsRevenuePerDay, A.intentsRevenuePerDay),
+      estStat('All-chain revenue / day', fmtUsd(I.chainRevenuePerDay) + '/day', fmtUsd(A.chainRevenuePerDay) + '/day', I.chainRevenuePerDay, A.chainRevenuePerDay),
+      estStat('Intents share of chain revenue', I.intentsSharePct == null ? 'unavailable' : `${I.intentsSharePct.toFixed(1)}%`, A.intentsSharePct == null ? 'unavailable' : `${A.intentsSharePct.toFixed(1)}%`, I.intentsSharePct, A.intentsSharePct, 'pts'),
+      estStat('Annualised Intents revenue', fmtUsd(I.annualisedIntentsRevenue), fmtUsd(A.annualisedIntentsRevenue), I.annualisedIntentsRevenue, A.annualisedIntentsRevenue),
+      estStat('Market cap', fmtUsd(I.marketCap), fmtUsd(A.marketCap), I.marketCap, A.marketCap),
+      estStat('Annualised revenue / market cap', I.revenueToMarketCapPct == null ? 'unavailable' : `${I.revenueToMarketCapPct.toFixed(2)}%/yr`, A.revenueToMarketCapPct == null ? 'unavailable' : `${A.revenueToMarketCapPct.toFixed(2)}%/yr`, I.revenueToMarketCapPct, A.revenueToMarketCapPct, 'pts'),
+    ];
+    if (I.chainFeesPerDay != null) {
+      cards.push(estStat('Chain fees / day', fmtUsd(I.chainFeesPerDay) + '/day', fmtUsd(A.chainFeesPerDay) + '/day', I.chainFeesPerDay, A.chainFeesPerDay, 'pct', 'at the actual fee per transaction'));
+    }
+    if (I.revenuePerAccountPerYear != null) {
+      cards.push(estStat('Chain revenue per account / yr', fmtUsdSmall(I.revenuePerAccountPerYear), fmtUsdSmall(A.revenuePerAccountPerYear), I.revenuePerAccountPerYear, A.revenuePerAccountPerYear));
+    }
+    cards.push(estStat('Fee burn value / yr', fmtUsd(I.burnUsdPerYear), fmtUsd(A.feeBurnAnnual * A.nearPrice), I.burnUsdPerYear, A.feeBurnAnnual * A.nearPrice, 'pct', 'burn priced at the scenario NEAR price'));
+    cards.push(estStat('Net supply change / yr @ 2.5%', `${fmtSigned(I.netSupplyStatusQuoPerYear)} NEAR`, `${fmtSigned(A ? (C.issuanceRateStatusQuo * C.supply - A.feeBurnAnnual) : null)} NEAR`, I.netSupplyStatusQuoPerYear, C.issuanceRateStatusQuo * C.supply - A.feeBurnAnnual, 'pct', 'status-quo issuance minus burn'));
+    cards.push(estStat('Net supply change / yr @ 1.6%', `${fmtSigned(I.netSupplyHsp029PerYear)} NEAR`, `${fmtSigned(C.issuanceRateHsp029 * C.supply - A.feeBurnAnnual)} NEAR`, I.netSupplyHsp029PerYear, C.issuanceRateHsp029 * C.supply - A.feeBurnAnnual, 'pct', 'HSP-029 rate (phased in) minus burn'));
+    $('lab-stats').innerHTML = cards.join('');
+
+    $('lab-verdicts').innerHTML = data.scorecard.map((c) => {
+      const v = verdicts.find((x) => x.id === c.id);
+      const verdict = v ? v.verdict : c.verdict;
+      const differs = verdict !== c.verdict;
+      return `<div class="card${differs ? ' differs' : ''}">
+        <span class="badge ${verdict}">${verdict}</span>${differs ? '<span class="scenario-tag">under your scenario</span>' : ''}
+        <p class="claim">${c.claim}</p>
+      </div>`;
+    }).join('');
+  }
+
+  if (!initLab.attached) {
+    for (const el of Object.values(els)) if (el) el.addEventListener('input', run);
+    $('lab-reset').addEventListener('click', () => {
+      els.fees.value = A.intentsFeesPerDay;
+      els.price.value = A.nearPrice;
+      els.burn.value = A.feeBurnAnnual;
+      if (A.accounts != null) els.accounts.value = A.accounts;
+      if (A.txnsPerDay != null) els.txns.value = A.txnsPerDay;
+      run();
+    });
+    initLab.attached = true;
+  }
+
+  $('lab-couplings').textContent =
+    `How this model couples things — Intents revenue = Intents fees × ${C.revenuePerFee == null ? 'n/a' : C.revenuePerFee.toFixed(4)} ` +
+    `(the actual ratio: ${fmtUsd(A.intentsRevenuePerDay)}/day of revenue on ${fmtUsd(A.intentsFeesPerDay)}/day of fees, 30d avg). ` +
+    `All-chain revenue adds the non-Intents remainder, held at its actual ${fmtUsd(C.nonIntentsRevenuePerDay)}/day. ` +
+    `Annualised = daily × 365. Market cap = price × ${fmtNum(C.supply)} NEAR supply (as reported — the same supply behind the dashboard's market cap). ` +
+    (C.feesPerTxn != null
+      ? `Chain fees = $${C.feesPerTxn.toFixed(4)} per transaction (actual ${fmtUsd(A.chainFeesPerDay)}/day over ${fmtNum(A.txnsPerDay)} transactions/day, NearBlocks 30d avg, ${M.txnsWindowStart} to ${M.txnsAsOfDate}) × your transactions/day. `
+      : '') +
+    (A.accounts != null
+      ? `Revenue per account divides annualised chain revenue by total accounts: ${fmtNum(A.accounts)} (NearBlocks daily charts — new minus deleted accounts since genesis, as of ${M.totalAccountsAsOf}). That is a holders proxy: it counts every account ever created, not just wallets holding a balance. `
+      : '') +
+    `Net supply change = issuance (${fmtNum(C.issuanceRateStatusQuo * C.supply)} NEAR/yr at the 2.5% status quo, ${fmtNum(C.issuanceRateHsp029 * C.supply)} at the 1.6% HSP-029 rate) minus fee burn. ` +
+    `The burn anchor, ${fmtNum(A.feeBurnAnnual)} NEAR/yr, is the HSP-029 simulator's stated assumption, not a measurement. Nothing in this lab overwrites the actuals above.`;
+
   run();
 }
 
