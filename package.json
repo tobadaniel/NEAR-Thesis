@@ -1,1 +1,1 @@
-{"scripts":{"build":"node build-single.mjs","test":"node test/model.test.mjs && node test/scenario.test.mjs && node test/theme.test.mjs"},"type":"module"}
+{"scripts":{"build":"node build-single.mjs","test":"node test/model.test.mjs && node test/scenario.test.mjs && node test/theme.test.mjs && node test/grid.test.mjs"},"type":"module"}

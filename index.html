@@ -33,45 +33,31 @@
   <p class="asof" id="asof">Loading data…</p>
 </header>
 
-<section id="stats" class="stats"></section>
+<section>
+  <div class="grid-head">
+    <h2>The dashboard <span class="est-tag">actuals · sliders model a scenario</span></h2>
+    <button type="button" id="grid-reset" class="btn">Reset to actuals</button>
+  </div>
+  <p class="dim note">Every figure is the fetched actual (30d averages where the source
+  reports them), and every box carries its own slider. Drag one: linked statistics are
+  re-inferred live at the actual coupling ratios, coupled sliders moving in sync — several
+  boxes share one driver (fees, price, burn, accounts, transactions). Inferred figures get
+  an <span class="est-tag">est</span> tag and the difference vs the actual; actuals are never
+  overwritten, and scorecard verdicts re-run under your scenario with the same rules. TVL
+  and stablecoins are uncoupled: their sliders move only their own box.</p>
+  <div id="stats" class="stats stats-grid"></div>
+  <details class="ref-details">
+    <summary>Coupling ratios &amp; method — every ratio the sliders use</summary>
+    <p class="dim note" id="grid-couplings"></p>
+  </details>
+</section>
 
 <section>
   <h2>Thesis scorecard</h2>
   <p class="dim">Each claim gets a verdict from a stated rule, applied to the fetched data.
-  Contradicted claims stay on the board — that is the point of testing a thesis.</p>
+  Contradicted claims stay on the board — that is the point of testing a thesis. While a
+  scenario is dialled in above, badges re-grade under it and changed verdicts are flagged.</p>
   <div id="scorecard" class="scorecard"></div>
-</section>
-
-<section id="scenario-lab" class="lab">
-  <h2>Scenario lab <span class="est-tag">Model · estimates only</span></h2>
-  <p class="dim">Everything above is the actual fetched data, and this lab never changes it.
-  What follows is a <strong>model</strong>: drag a driver and the statistics arithmetically
-  linked to it are re-inferred live, holding the coupling ratios at their actual values
-  (every ratio is printed at the bottom of this section). Inferred figures are labelled
-  <span class="est-tag">est</span> and shown next to the actual value with the difference.
-  The scorecard verdicts are re-run under your scenario with the same stated rules.</p>
-  <div class="sim-controls">
-    <label>Intents fees per day, USD <span id="lab-v-fees" class="mono"></span>
-      <input type="range" id="lab-fees" step="any"></label>
-    <label>NEAR price, USD <span id="lab-v-price" class="mono"></span>
-      <input type="range" id="lab-price" step="any"></label>
-    <label>Fee burn, NEAR/year <span id="lab-v-burn" class="mono"></span>
-      <input type="range" id="lab-burn" step="250000"></label>
-    <label>Total accounts (holders proxy) <span id="lab-v-accounts" class="mono"></span>
-      <input type="range" id="lab-accounts" step="any"></label>
-    <label>Transactions per day <span id="lab-v-txns" class="mono"></span>
-      <input type="range" id="lab-txns" step="any"></label>
-  </div>
-  <div class="lab-actions">
-    <button type="button" id="lab-reset" class="btn">Reset to actuals</button>
-  </div>
-  <div id="lab-stats" class="stats"></div>
-  <h3>Scorecard under your scenario</h3>
-  <p class="dim">Same claims, same rules — only the inputs named in the coupling note below move.
-  TVL, stablecoin history and 1y price history stay at their actuals, so those three
-  verdicts cannot change here.</p>
-  <div id="lab-verdicts" class="scorecard"></div>
-  <p class="dim" id="lab-couplings"></p>
 </section>
 
 <section>
@@ -100,7 +86,7 @@
     <label>Total supply, NEAR <span id="v-supply" class="mono"></span>
       <input type="range" id="in-supply" min="1200000000" max="1450000000" step="10000000"></label>
   </div>
-  <div id="sim-stats" class="stats"></div>
+  <div id="sim-stats" class="stats snap-stats"></div>
   <div class="charts">
     <figure><figcaption>Maximum annual issuance rate, % — HSP-029 path</figcaption><div id="chart-rate"></div></figure>
     <figure><figcaption>Cumulative NEAR not issued vs status quo</figcaption><div id="chart-saved"></div></figure>
@@ -110,16 +96,18 @@
 
 <section>
   <h2>Chain snapshot (NEAR public RPC)</h2>
-  <div id="rpc" class="stats"></div>
+  <div id="rpc" class="stats snap-stats"></div>
 </section>
 
 <footer>
-  <h2>Sources</h2>
-  <ul id="sources"></ul>
-  <p class="dim">Reported figures (HSP-029 vote, buyback reporting) are labelled
-  "as reported" wherever used and are never mixed into the measured series.
-  Full method, evidence against, and what would change my mind: <span class="mono">THESIS.md</span>.
-  Not financial advice — an evidence exercise.</p>
+  <details class="ref-details">
+    <summary>Sources — every figure above traces to these</summary>
+    <ul id="sources"></ul>
+    <p class="dim">Reported figures (HSP-029 vote, buyback reporting) are labelled
+    "as reported" wherever used and are never mixed into the measured series.
+    Full method, evidence against, and what would change my mind: <span class="mono">THESIS.md</span>.
+    Not financial advice — an evidence exercise.</p>
+  </details>
 </footer>
 
 <script type="module" src="app.js"></script>
