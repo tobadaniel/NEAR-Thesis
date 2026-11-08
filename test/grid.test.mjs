@@ -44,4 +44,23 @@ assert.ok(html.includes('live-dot'), 'dist contains the LIVE dot element');
 assert.ok(html.includes('@keyframes live-pulse'), 'dist contains the LIVE pulse animation');
 assert.ok(html.includes('class="live"'), 'dist contains the LIVE label');
 
+// Typography round: embedded fonts, caps headings, colon title, toolbar.
+// The @font-face srcs must be inlined data URIs — no external font files,
+// so the bundle is fully offline from disk.
+assert.ok(html.includes('@font-face'), 'dist embeds @font-face rules');
+assert.ok(html.includes('font-family: "Space Grotesk"'), 'dist declares Space Grotesk');
+assert.ok(html.includes('font-family: "Inter"'), 'dist declares Inter');
+assert.ok((html.match(/data:font\/woff2;base64,/g) || []).length >= 2, 'dist inlines both fonts as base64');
+assert.ok(!html.includes('url("fonts/'), 'dist has no unresolved local font URLs');
+assert.ok(!html.includes('fonts.googleapis.com') && !html.includes('fonts.gstatic.com'),
+  'dist references no Google Fonts hosts');
+// Headings render all caps; the title uses the colon form everywhere.
+assert.ok(/text-transform:\s*uppercase/.test(html), 'dist uppercases its headings');
+assert.ok(html.includes('<h1>NEAR: ON THE EVIDENCE</h1>'), 'dist shows the colon title');
+assert.ok(html.includes('<title>NEAR: ON THE EVIDENCE'), 'dist <title> uses the colon form');
+assert.ok(!html.includes('NEAR, On The Evidence'), 'dist has no comma-form title left');
+// The dashboard toolbar is one aligned row, not a heading with a pill in it.
+assert.ok(html.includes('class="grid-toolbar"'), 'dist ships the grid toolbar row');
+assert.ok(!html.includes('class="grid-head"'), 'dist dropped the old grid-head row');
+
 console.log('grid.test.mjs: all assertions passed');

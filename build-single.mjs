@@ -1,9 +1,11 @@
 // Builds dist/near-thesis.html: the whole dashboard in one file — CSS,
-// model.js, app.js and the fetched data.json inlined — so anyone can
-// open it with no server. Run: node build-single.mjs
+// model.js, app.js, the embedded fonts and the fetched data.json
+// inlined — so anyone can open it with no server and no network.
+// Run: node build-single.mjs
 // (Run node build-data.mjs first if you want fresher data inlined.)
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 function stripModuleSyntax(code) {
   return code
@@ -11,7 +13,18 @@ function stripModuleSyntax(code) {
     .replace(/^export\s+/gm, ''); // export prefixes
 }
 
-const css = readFileSync('style.css', 'utf8');
+// The @font-face rules in style.css point at fonts/*.woff2 for the
+// modular view; in the single file they become base64 data URIs so the
+// typography survives being opened straight from disk, fully offline.
+// (Function replacement again — inserted verbatim, no "$" surprises.)
+function inlineFonts(css) {
+  return css.replace(/url\("fonts\/([\w.-]+\.woff2)"\)/g, (m, name) => {
+    const b64 = readFileSync(join('fonts', name)).toString('base64');
+    return `url("data:font/woff2;base64,${b64}")`;
+  });
+}
+
+const css = inlineFonts(readFileSync('style.css', 'utf8'));
 const data = readFileSync('data.json', 'utf8');
 const js = ['model.js', 'scenario.js', 'app.js']
   .map((f) => stripModuleSyntax(readFileSync(f, 'utf8')))

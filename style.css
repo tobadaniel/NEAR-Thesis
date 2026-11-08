@@ -1,3 +1,16 @@
+/* Fonts: Space Grotesk (display) + Inter (body/UI), variable WOFF2,
+   latin subset, SIL Open Font License 1.1. The files live in fonts/;
+   build-single.mjs inlines them as base64 data URIs in the single-file
+   bundle, so the dist renders identically opened straight from disk,
+   fully offline. System stacks stay as fallbacks behind them. */
+@font-face { font-family: "Space Grotesk"; font-style: normal; font-weight: 300 700;
+  font-display: swap; src: url("fonts/space-grotesk-latin.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900;
+  font-display: swap; src: url("fonts/inter-latin.woff2") format("woff2"); }
+:root {
+  --font-display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
 /* Themes: dark is the original look; light is a warm paper variant.
    Every colour on the page (CSS and the SVG chart strokes, which app.js
    reads from the --chart-* variables) comes from these variables. */
@@ -26,12 +39,15 @@
   --badge-contradicted-bg: #fbe4e1; --badge-contradicted-border: #eba79d;
 }
 * { box-sizing: border-box; }
-body { margin: 0 auto; max-width: 1080px; padding: 16px 14px 20px; background: var(--bg); color: var(--ink);
-  font: 14.5px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-h1 { font-size: 22px; margin: 0 0 5px; }
-h2 { font-size: 17px; margin: 14px 0 5px; }
-h3 { font-size: 15px; margin: 14px 0 6px; }
+body { margin: 0 auto; max-width: 1080px; padding: 16px 14px 14px; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 14.5px; line-height: 1.5; }
+/* Topics and subtopics speak in Space Grotesk, all caps. */
+h1, h2, h3 { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+h1 { font-size: 23px; font-weight: 700; margin: 0 0 5px; }
+h2 { font-size: 16.5px; font-weight: 700; margin: 11px 0 5px; }
+h3 { font-size: 15px; font-weight: 600; margin: 14px 0 6px; }
 h1, h2, h3, .stat .v, .card .claim, figcaption b { color: var(--heading); }
+.stat .v, .card .claim, figcaption b { font-family: var(--font-display); }
 .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .theme-toggle { flex: none; cursor: pointer; background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px;
@@ -45,13 +61,13 @@ p.dim { font-size: 12.5px; line-height: 1.45; }
 .lede { font-size: 13.5px; line-height: 1.45; color: var(--dim); max-width: 75ch; margin: 6px 0; }
 .lede strong { color: var(--ink); }
 .asof { color: var(--accent); font-size: 12.5px; margin: 6px 0 0; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 8px; margin: 10px 0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 8px; margin: 8px 0; }
 .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; }
 .stat .k { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--dim); }
 .stat .v { font-size: 19px; font-weight: 700; }
 .stat .s { display: block; font-size: 11.5px; color: var(--dim); }
 .scorecard { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 9px; }
 .card .claim { font-weight: 600; margin: 7px 0 5px; }
 .card .evidence { color: var(--dim); font-size: 12px; line-height: 1.38; margin: 0; }
 .badge { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px; text-transform: uppercase; letter-spacing: .04em; }
@@ -66,25 +82,33 @@ svg.chart { width: 100%; height: auto; display: block; }
 svg.chart .axis { fill: var(--dim); font-size: 10px; }
 svg.chart .grid { stroke: var(--line); stroke-width: .5; }
 .unavailable { color: var(--red); font-size: 14px; padding: 22px 0; text-align: center; }
-.sim-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin: 10px 0; }
+.sim-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin: 8px 0; }
 .sim-controls label { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 7px 10px; font-size: 13px; color: var(--dim); display: block; }
 .sim-controls input[type=range] { width: 100%; margin-top: 3px; accent-color: var(--accent); }
 /* ------------------------------------------------- stat grid scenario --- */
-.grid-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.grid-head h2 { margin: 4px 0 6px; }
+/* One toolbar row under the dashboard heading: the mode pill flush with
+   the left edge of the text column and stat boxes, Reset flush with the
+   right edge of the boxes, same row, no insets on either side. */
+.grid-toolbar { display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin: 2px 0 4px; }
+/* At phone width the full-size pill + button would overflow the row and
+   push Reset past the grid's right edge — the toolbar pair runs a touch
+   smaller so the single row always fits the column. */
+.grid-toolbar .est-tag { font-size: 9.5px; letter-spacing: .02em; padding: 1px 6px; }
+.grid-toolbar .btn { font-size: 13px; padding: 6px 12px; }
 .note { font-size: 12px; line-height: 1.45; margin: 5px 0; }
 #grid-couplings { font-size: 11.5px; }
-.ref-details { margin: 8px 0 4px; }
-.ref-details summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--dim);
+.ref-details { margin: 6px 0 2px; }
+.ref-details summary { cursor: pointer; font-family: var(--font-display); text-transform: uppercase;
+  letter-spacing: .02em; font-size: 13px; font-weight: 600; color: var(--dim);
   padding: 6px 2px; }
 .ref-details summary:hover { color: var(--ink); }
 .ref-details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-footer .ref-details { margin-top: 16px; }
+footer .ref-details { margin-top: 12px; }
 .est-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
   color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 1px 7px;
   vertical-align: middle; white-space: nowrap; }
 .est-tag[hidden] { display: none; }
-h2 .est-tag { margin-left: 6px; }
 .note .est-tag { font-size: 9.5px; padding: 0 6px; }
 .stat .delta { display: block; font-size: 12px; font-weight: 600; }
 .stat .delta:empty { display: none; }
@@ -133,7 +157,7 @@ h2 .est-tag { margin-left: 6px; }
 :root[data-theme="light"] .acc-sky    { --acc: #1f6f8f; --acc-v: #14485e; }
 :root[data-theme="light"] .acc-flame  { --acc: #b34a1f; --acc-v: #6e2d10; }
 :root[data-theme="light"] .acc-slate  { --acc: #4c6076; --acc-v: #2e3d4d; }
-.stats-grid .stat { padding: 8px 10px; }
+.stats-grid .stat { padding: 7px 10px; }
 .stats-grid .stat .k { font-size: 9.5px; letter-spacing: .03em; }
 .stats-grid .stat .k { color: var(--acc, var(--dim)); }
 .stats-grid .stat .v { color: var(--acc-v, var(--heading)); font-size: 17px; white-space: nowrap; }

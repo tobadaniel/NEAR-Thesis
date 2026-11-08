@@ -1,4 +1,4 @@
-# NEAR, On The Evidence
+# NEAR: ON THE EVIDENCE
 
 **Track:** Investment Thesis (`thesis`) · NEAR HACKATHON 2026
 **Data as of:** 2026-11-07 (fetched 20:52–20:55 UTC, see Sources)

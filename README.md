@@ -1,4 +1,4 @@
-# NEAR, On The Evidence
+# NEAR: ON THE EVIDENCE
 
 **An investment thesis on NEAR that anyone can re-run — including the
 parts that come out against it.**
